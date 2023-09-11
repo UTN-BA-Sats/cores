@@ -13,7 +13,6 @@ from cocotb.triggers import Timer
 async def adder_basic_test(dut):
     """Test for 5 + 10"""
 
-
     dut.A.value = 5
     dut.B.value = 10
 
