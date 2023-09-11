@@ -120,7 +120,7 @@ def parse_args():
     p.add_argument('--dut', help='Run test for one DUT')
 
     dut = p.add_argument_group('dut')
-    dut.add_argument('-w', '--waves', action='store_true', help='Open waveforms for ')
+    dut.add_argument('-w', '--waves', action='store_true', help='Open waveforms')
 
     return p.parse_args()
 
