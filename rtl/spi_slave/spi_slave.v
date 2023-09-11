@@ -66,13 +66,13 @@ module spi_slave #(
     end
 
     // axi fsm
-    typedef enum {TX_IDLE, TX_PENDING, TX_WAITING, TX_TRANSMITTING} fsm_state_axi_tx;
-    fsm_state_axi_tx current_state_axi_tx = TX_IDLE;
-    fsm_state_axi_tx next_state_axi_tx    = TX_IDLE;
+    typedef enum {TX_IDLE, TX_PENDING, TX_WAITING, TX_TRANSMITTING} fsm_state_axi_tx_e;
+    fsm_state_axi_tx_e current_state_axi_tx = TX_IDLE;
+    fsm_state_axi_tx_e next_state_axi_tx    = TX_IDLE;
 
-    typedef enum {RX_IDLE, RX_RECEIVING, RX_READY} fsm_state_axi_rx;
-    fsm_state_axi_rx current_state_axi_rx = RX_IDLE;
-    fsm_state_axi_rx next_state_axi_rx    = RX_IDLE;
+    typedef enum {RX_IDLE, RX_RECEIVING, RX_READY} fsm_state_axi_rx_e;
+    fsm_state_axi_rx_e current_state_axi_rx = RX_IDLE;
+    fsm_state_axi_rx_e next_state_axi_rx    = RX_IDLE;
     
     always @(*) begin
         next_state_spi = current_state_spi;
@@ -206,8 +206,8 @@ module spi_slave #(
     end
 
     // spi fsm
-    typedef enum {SPI_IDLE, SPI_RUNNING} fsm_state_spi;
-    fsm_state_spi current_state_spi = SPI_IDLE;
-    fsm_state_spi next_state_spi    = SPI_IDLE;
+    typedef enum {SPI_IDLE, SPI_RUNNING} fsm_state_spi_e;
+    fsm_state_spi_e current_state_spi = SPI_IDLE;
+    fsm_state_spi_e next_state_spi    = SPI_IDLE;
 
 endmodule
