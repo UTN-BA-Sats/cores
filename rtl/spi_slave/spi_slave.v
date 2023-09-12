@@ -73,7 +73,7 @@ module spi_slave #(
     typedef enum {RX_IDLE, RX_RECEIVING, RX_READY} fsm_state_axi_rx_e;
     fsm_state_axi_rx_e current_state_axi_rx = RX_IDLE;
     fsm_state_axi_rx_e next_state_axi_rx    = RX_IDLE;
-    
+
     always @(*) begin
         next_state_spi = current_state_spi;
 
@@ -181,7 +181,7 @@ module spi_slave #(
     // spi registers
     localparam DATA_COUNTER_LEN = $clog2(DATA_LEN);
     reg [DATA_COUNTER_LEN:0] spi_counter_d, spi_counter_q;
-    
+
     reg [DATA_LEN-1:0] spi_tx_data_d, spi_tx_data_q;
     reg [DATA_LEN-1:0] spi_rx_data_d, spi_rx_data_q;
 
