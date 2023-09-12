@@ -102,7 +102,12 @@ module spi_slave #(
                     spi_counter_d = '0;
                 end
             end
-            // default?
+            default: begin
+                next_state_spi = SPI_IDLE;
+                spi_tx_data_d = '0;
+                spi_rx_data_d = '0;
+                spi_counter_d = '0;
+            end
         endcase
 
         next_state_axi_tx = current_state_axi_tx;
@@ -134,7 +139,12 @@ module spi_slave #(
                     tx_tready_d = 1;
                 end
             end
-            // default?
+            default: begin
+                next_state_axi_tx = TX_IDLE;
+                tx_tready_d = 1;
+                tx_tdata_d = '0;
+                spi_tx_data_d = '0;
+            end
         endcase
 
         next_state_axi_rx = current_state_axi_rx;
@@ -160,7 +170,11 @@ module spi_slave #(
                     rx_tvalid_d = 0;
                 end
             end
-            // default?
+            default: begin
+                next_state_axi_rx = RX_IDLE;
+                rx_tdata_d = '0;
+                rx_tvalid_d = 0;
+            end
         endcase
     end
 
