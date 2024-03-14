@@ -1,9 +1,13 @@
 ## python
-
 venv/
 __pycache__/
 sim_build/
+.pytest_cache/
 
 ## gitignore para el build de hw
 
 **/hw_test/build/
+
+## Simulation files
+*.vvp
+*.vcd

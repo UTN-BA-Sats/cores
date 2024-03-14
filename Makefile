@@ -24,7 +24,8 @@ clean:  ## Clean building files
 		-exec rm -r {} \;)
 
 
-build-docker:  ## Build the docker used for development
+build.docker:  ## Deletes docker image and Builds a new one used for development
+	-docker image rm ${DOCKER_IMAGE_NAME}
 	docker build --no-cache --tag ${DOCKER_IMAGE_NAME} -f Dockerfile .
 
 
@@ -36,7 +37,7 @@ test:  ## Run all tests or the ones for specific module setting DUT variable
 	@$(call run_in_container, ./run_cocotb_tests.sh ${DUT})
 
 
-waves:  ## Run gtkwave with last test waves from DUT variable
+test.waves:  ## Run gtkwave with last test waves from DUT variable
 	@[ "${DUT}" ] || ( echo "Usage:    DUT=<module> make waves"; exit 1 )
 	@$(call run_in_container, ./run_cocotb_tests.sh ${DUT} --waves)
 
