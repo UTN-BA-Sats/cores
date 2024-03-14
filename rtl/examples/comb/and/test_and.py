@@ -1,5 +1,3 @@
-#TODO
-
 import os
 import subprocess
 from pathlib import Path
@@ -10,13 +8,14 @@ import cocotb
 from cocotb.runner import get_runner
 from cocotb.triggers import Timer
 
-DUT = "myand"
+DUT = "and"
 
-## puertos
+# puertos
 # piA, piB : in STD_LOGIC;
 # poZ : out STD_LOGIC
 
-@cocotb.test()
+
+@cocotb.test
 async def and_test(dut):
     for i in range(2):
         for j in range(2):
@@ -27,16 +26,16 @@ async def and_test(dut):
             assert dut.poZ.value == (i and j), "Error! Failed basic and test."
 
 
-@cocotb.test()
+@cocotb.test
 async def and_random_test(dut):
     for i in range(10):
         a = random.randint(0, 1)
         b = random.randint(0, 1)
         dut.piA.value = a
         dut.piB.value = b
-        
+
         await Timer(2, units='ns')
-        
+
         z = dut.poZ.value
 
         assert (a and b) == z, f"\
@@ -44,6 +43,7 @@ async def and_random_test(dut):
             a = {a}, b = {b}, z = {z}"
 
         print(f"values: a = {a}, b = {b}, z = {z}\n")
+
 
 def test_simple_dff_runner():
 
@@ -66,14 +66,16 @@ def test_simple_dff_runner():
     )
 
     try:
-        runner.test(toplevel=DUT, py_module=os.path.basename(__file__)[:-3], extra_args=["--wave=waveform.ghw", "--stop-delta=1000000"])
-    except:
+        runner.test(toplevel=DUT,
+                    py_module="test_uartTx",
+                    extra_args=["--wave=waveform.ghw", "--stop-delta=1000000"])
+    except Exception as e:
+        print(f"Exception {str(e)}")
         pass
-        
 
 
 if __name__ == "__main__":
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--wave", action="store_true", help="Open gtk-wave on finish")
     parser.add_argument("-vw", "--view-wave", action="store_true", help="Open gtkwave, does not simulate again")

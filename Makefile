@@ -24,7 +24,7 @@ clean:  ## Clean building files
 		-exec rm -r {} \;)
 
 
-build-docker:  ## Build the docker used for development
+build.docker:  ## Build the docker used for development
 	docker build --no-cache --tag ${DOCKER_IMAGE_NAME} -f Dockerfile .
 
 
@@ -36,9 +36,14 @@ test:  ## Run all tests or the ones for specific module setting DUT variable
 	@$(call run_in_container, ./run_cocotb_tests.sh ${DUT})
 
 
-waves:  ## Run gtkwave with last test waves from DUT variable
-	@[ "${DUT}" ] || ( echo "Usage:    DUT=<module> make waves"; exit 1 )
+test.waves:  ## Run tests and open gtkwave of DUT variable
+	@[ "${DUT}" ] || ( echo "Usage:    DUT=<module> make test.waves"; exit 1 )
 	@$(call run_in_container, ./run_cocotb_tests.sh ${DUT} --waves)
+
+
+# waves:  ## Run gtkwave with last test result from DUT variable
+# 	@[ "${DUT}" ] || ( echo "Usage:    DUT=<module> make waves"; exit 1 )
+# 	@$(call run_in_container, ./run_cocotb_tests.sh ${DUT} --waves)
 
 
 flake8:  ## Run flake8 code quality check
@@ -51,8 +56,8 @@ verible:  ## Run verible-verilog-lint code quality check
 	@$(call run_in_container, verible-verilog-lint ${VHDL_FILES})
 
 
+
 quality: flake8 verible  ## Run all quality check
 
-
 .DEFAULT_GOAL := help
-.PHONY: help clean build-docker dockershell test flake8 verible quality
+.PHONY: help clean build.docker dockershell test.waves flake8 verible quality
