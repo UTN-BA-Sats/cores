@@ -7,10 +7,10 @@
 # -----------------------------------------------------------------------------
 
 #------ User LEDs
-set_io --warn-no-port LED3 4  #-- output 
-set_io --warn-no-port LED2 3  #-- output
-set_io --warn-no-port LED1 2  #-- output 
-set_io --warn-no-port LED0 1  #-- output
+set_io --warn-no-port LED3 8  #-- output 
+set_io --warn-no-port LED2 9  #-- output
+set_io --warn-no-port LED1 10  #-- output 
+set_io --warn-no-port LED0 11  #-- output
 
 # ------------ User push buttons ----------------------------------------------
 set_io --warn-no-port BTN1 31  # input
