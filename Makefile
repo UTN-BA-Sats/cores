@@ -1,5 +1,5 @@
 define run_in_container
-	docker run -it --rm \
+	docker run -t --rm \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /var/run/dbus:/var/run/dbus \
 		--network host \
@@ -9,7 +9,7 @@ define run_in_container
 		$(DOCKER_IMAGE_NAME) $(1)
 endef
 
-DOCKER_IMAGE_NAME = hdlcores:latest
+DOCKER_IMAGE_NAME = ghcr.io/utn-ba-sats/hdlcores:latest
 
 
 help:  ## Shows the available targets
@@ -23,6 +23,8 @@ clean:  ## Clean building files
 		-name 'waveform.vcd' \
 		-exec rm -r {} \;)
 
+pull-docker:
+	docker pull ghcr.io/utn-ba-sats/hdlcores:latest
 
 build-docker:  ## Build the docker used for development
 	docker build --no-cache --tag ${DOCKER_IMAGE_NAME} -f Dockerfile .
