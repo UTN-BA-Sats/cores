@@ -31,12 +31,12 @@ class UartDrv:
         databuf = ""
         await FallingEdge(self.rx_sig)
         await Timer(self.half_bit_period, units='ns')
-        dut.s_dut.value = 1
+        #dut.s_dut.value = 1
         databuf += "1" if (self.rx_sig.value == 1) else "0"
         for x in range(9):
             await Timer(self.bit_period, units='ns')
             databuf += "1" if (self.rx_sig.value == 1) else "0"
-        dut.s_dut.value = 0
+        #dut.s_dut.value = 0
         if (databuf[0] != "0" or databuf[-1] != "1") :
             return -1
         else:
