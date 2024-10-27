@@ -8,7 +8,7 @@
 
 # ----------------- Unconected ------------------------------------------------
 
-set_io --warn-no-port o_led_status 7
+set_io --warn-no-port U1 7
 set_io --warn-no-port U2 18
 set_io --warn-no-port U3 28
 set_io --warn-no-port U4 29
@@ -71,45 +71,45 @@ set_io --warn-no-port o_leds[7] 17
 
 # ----------------- Sensors -------------------------------------------------
 
-set_io --warn-no-port ALERT1 1
-set_io --warn-no-port SCL1 2
-set_io --warn-no-port SDA1 3
-set_io --warn-no-port THERM1 4
+set_io --warn-no-port ALERT0 1
+set_io --warn-no-port scl0 2
+set_io --warn-no-port sda0 3
+set_io --warn-no-port THERM0 4
 
-set_io --warn-no-port ALERT2 31
-set_io --warn-no-port SCL2 32
-set_io --warn-no-port SDA2 33
-set_io --warn-no-port THERM2 34
+set_io --warn-no-port ALERT1 31
+set_io --warn-no-port scl1 32
+set_io --warn-no-port sda1 33
+set_io --warn-no-port THERM1 34
 
-set_io --warn-no-port SCL3 37
-set_io --warn-no-port SDA3 38
-set_io --warn-no-port ALERT3 39
-set_io --warn-no-port THERM3 41
+set_io --warn-no-port scl2 37
+set_io --warn-no-port sda2 38
+set_io --warn-no-port ALERT2 39
+set_io --warn-no-port THERM2 41
 
-set_io --warn-no-port SCL4 48
-set_io --warn-no-port SDA4 49
-set_io --warn-no-port ALERT4 52
-set_io --warn-no-port THERM4 55
+set_io --warn-no-port scl3 48
+set_io --warn-no-port sda3 49
+set_io --warn-no-port ALERT3 52
+set_io --warn-no-port THERM3 55
 
-set_io --warn-no-port SCL5 73
-set_io --warn-no-port SDA5 74
-set_io --warn-no-port ALERT5 75
-set_io --warn-no-port THERM5 76
+set_io --warn-no-port scl4 73
+set_io --warn-no-port sda4 74
+set_io --warn-no-port ALERT4 75
+set_io --warn-no-port THERM4 76
 
-set_io --warn-no-port scl 104
-set_io --warn-no-port sda 105
-set_io --warn-no-port ALERT6 106
-set_io --warn-no-port THERM6 107
+set_io --warn-no-port scl5 104
+set_io --warn-no-port sda5 105
+set_io --warn-no-port ALERT5 106
+set_io --warn-no-port THERM5 107
 
-set_io --warn-no-port THERM7 110
-set_io --warn-no-port SDA7 112
-set_io --warn-no-port SCL7 113
-set_io --warn-no-port ALERT7 114
+set_io --warn-no-port THERM6 110
+set_io --warn-no-port sda6 112
+set_io --warn-no-port scl6 113
+set_io --warn-no-port ALERT6 114
 
-set_io --warn-no-port ALERT8 141
-set_io --warn-no-port SCL8 142
-set_io --warn-no-port SDA8 143
-set_io --warn-no-port THERM8 144
+set_io --warn-no-port ALERT7 141
+set_io --warn-no-port scl7 142
+set_io --warn-no-port sda7 143
+set_io --warn-no-port THERM7 144
 
 # ----------------- Switchs -------------------------------------------------
 

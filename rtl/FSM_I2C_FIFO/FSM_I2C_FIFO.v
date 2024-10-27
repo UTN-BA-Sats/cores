@@ -19,11 +19,15 @@ module FSM_I2C_FIFO #(
     CLK_DIV = 16,
     CLK_DIV_REG_BITS = 24,
     COUNTER_ACK_LIMIT = 25,
-    COUNTER_CONFIG_LIMIT = 25
+    COUNTER_CONFIG_LIMIT = 25,
+    DATA_HAD_ERROR = 7
 ) (
     input i_clk,
     input i_rst,
     input i_fsm_rst,
+
+    input i_request_data,
+    output reg o_data_ready, 
 
     inout sda,
     inout scl,
@@ -34,9 +38,7 @@ module FSM_I2C_FIFO #(
     output o_fifo_data_out_valid_to_extract,
     output [DATA_DEPTH-1:0] o_fifo_data_out,
 
-    output o_fifo_empty,
-
-    output reg o_borrar
+    output o_fifo_empty
 
 );
 
@@ -50,6 +52,8 @@ module FSM_I2C_FIFO #(
 
 wire w_start;
 wire w_nak;
+wire w_request_data;
+wire w_data_ready;
 
 wire w_addr_ready;
 wire [DATA_DEPTH-1:0] w_addr_bits;
@@ -89,7 +93,8 @@ FSM #(
     .SENSOR_DATA(SENSOR_DATA),
     .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
     .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
-    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT),
+    .DATA_HAD_ERROR(DATA_HAD_ERROR)
     ) 
     FSM(
     .i_clk(i_clk), 
@@ -98,7 +103,9 @@ FSM #(
     .i_force_rst(i_fsm_rst),
 
     //control
-    .o_start(w_start), 
+    .o_start(w_start),
+    .i_request_data(i_request_data),
+    .o_data_ready(o_data_ready),  
     
     //addr interface
     .i_addr_ready(w_addr_ready),
@@ -127,9 +134,8 @@ FSM #(
     .o_data_in_valid(w_data_in_valid),
 
     .i_fifo_full(w_fifo_full),
-    .o_err(o_led_fsm_err),
+    .o_err(o_led_fsm_err)
 
-    .o_borrar(o_borrar)
 );
 
 i2c_master_oe #(.DATA_DEPTH(DATA_DEPTH), .CLK_DIV(CLK_DIV), .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS)) 
@@ -279,7 +285,7 @@ defparam IO_PIN_SDA_INST.PIN_TYPE = 6'b101001;
 // Default value of PIN_TYPE = 6’000000 i.e.
 // an input pad, with the input signal
 // registered.
-defparam IO_PIN_SDA_INST.PULLUP = 1'b0;
+defparam IO_PIN_SDA_INST.PULLUP = 1'b1;             //<---------------------1'b0
 // By default, the IO will have NO pull up.
 // This parameter is used only on bank 0, 1,
 // and 2. Ignored when it is placed at bank 3
@@ -316,7 +322,7 @@ defparam IO_PIN_SCL_INST.PIN_TYPE = 6'b101001;
 // Default value of PIN_TYPE = 6’000000 i.e.
 // an input pad, with the input signal
 // registered.
-defparam IO_PIN_SCL_INST.PULLUP = 1'b0;
+defparam IO_PIN_SCL_INST.PULLUP = 1'b1;             //<---------------------1'b0
 // By default, the IO will have NO pull up.
 // This parameter is used only on bank 0, 1,
 // and 2. Ignored when it is placed at bank 3
@@ -332,6 +338,5 @@ defparam IO_PIN_SCL_INST.IO_STANDARD = "SB_LVCMOS";
 
 //--------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-
 
 endmodule

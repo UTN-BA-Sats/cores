@@ -16,7 +16,7 @@ import cocotb.types
 none = ['0','0','0','0','0','0','0','0']
 data = ['0','0','0','1','0','0','1','0']
 data_decimal = ['0','1','1','1','0','0','0','0']
-registers = [data,none,none,none,none,none,none,none,none,none,none,none,none,none,none,data_decimal,none,none]
+registers = [data,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,none,data_decimal,none]
 #------------------------------------------------------------------------
 
 #INDICES
@@ -46,9 +46,9 @@ stop = 1
 #------------------------------------------------------------------------
 REGISTER_POINTER_CONFIG_SLAVE = "00001001"        # 0x09
 REGISTER_CONFIG_DATA_SLAVE = "00001000"           # 0x04
-ADDR_VECTOR = "01001110"                          # 0x4e
+ADDR_VECTOR = "10011100"                          # 0x4e
 data_write_vector = []
-UART_MESSAGE = "01100001"#"11110010" y "01000000" # 97 para obtener los datos del sensor 0 y 105 para solo resetear la FSM 0            
+UART_MESSAGE = "10000110"#"11110010" y "01000000" # 97 para obtener los datos del sensor 0 y 105 para solo resetear la FSM 0            
 UART_DIVIDER_NUMBER = 230                         # (Clock/Baudrate)
 #------------------------------------------------------------------------
 
@@ -152,7 +152,7 @@ def i2c_slave(dut,scl,sda):
     elif(state==ACK_NACK):
 
         if(gen_ack_nack==1):
-            dut.sda.value=0
+            dut.sda0.value=0
 
             if(bit_RW=='0'):
                 index_data=7
@@ -162,18 +162,18 @@ def i2c_slave(dut,scl,sda):
                 state=READ
 
         elif(gen_ack_nack==2):
-            dut.sda.value=1
+            dut.sda0.value=1
             state=CHECK_ADDR
         elif(gen_ack_nack==3):
-            dut.sda.value=0
+            dut.sda0.value=0
             index_data=7
             state=WRITE
         elif(gen_ack_nack==4):
-            dut.sda.value=0
+            dut.sda0.value=0
             index_registers=0
             state=IDLE
         elif(gen_ack_nack==5):
-            dut.sda.value=0
+            dut.sda0.value=0
             state=IDLE
 
             index_check_addr=-1
@@ -202,7 +202,7 @@ def i2c_slave(dut,scl,sda):
             state=ACK_NACK
             gen_ack_nack=5
     elif(state==READ):
-        dut.sda.value=int(registers[register_pointer][index_registers])
+        dut.sda0.value=int(registers[register_pointer][index_registers])
         index_registers=index_registers+1
         if(index_registers>7):
             gen_ack_nack=4 
@@ -271,8 +271,8 @@ async def test_FSM_I2C_FIFO_UART(dut):
     global uart_state
     global uart_contador_pedidos
 
-    scl = dut.scl.value.binstr
-    sda = dut.sda.value.binstr
+    scl = dut.scl0.value.binstr
+    sda = dut.sda0.value.binstr
     clk_prev_value = dut.i_clk.value.binstr
     dut.i_rx.value = 1
 
@@ -288,8 +288,8 @@ async def test_FSM_I2C_FIFO_UART(dut):
 
     while contador>0:
 
-        scl = dut.scl.value.binstr
-        sda = dut.sda.value.binstr
+        scl = dut.scl0.value.binstr
+        sda = dut.sda0.value.binstr
 
         await RisingEdge(dut.i_clk)
 

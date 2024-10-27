@@ -8,15 +8,15 @@
 module FSM_I2C_FIFO_UART #(
     parameter DATA_DEPTH = 8, 
     DIV_BITS = 16, 
-    DIV_CLK_NUMBER=170, 
+    DIV_CLK_NUMBER=14,//170,
     NBYTES = 0,                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
     ADDR_SLAVE_READ = 157,
     ADDR_SLAVE_WRITE = 156,
-    CONFIG_REGISTER_WRITE = 9,         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    CONFIG_REGISTER_WRITE = 9,         
     CONFIG_REGISTER_READ = 3,          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
     CONFIG_REGISTER_DATA = 4,
     SENSOR_DATA = 0,
-    SENSOR_DECIMAL_FRACTION_DATA = 15,
+    SENSOR_DECIMAL_FRACTION_DATA = 21,  //0x15
     ADDR_LENGTH = 8,
     COUNTER_ACK_LIMIT = 25,
     COUNTER_CONFIG_LIMIT = 25,
@@ -41,7 +41,10 @@ module FSM_I2C_FIFO_UART #(
     FSM_SENSOR4 =  109,
     FSM_SENSOR5 =  110,
     FSM_SENSOR6 =  111,
-    FSM_SENSOR7 =  112
+    FSM_SENSOR7 =  112,
+    FIFO_EMPTY_ERROR_CODE = 85,
+    DATA_HAD_ERROR = 7,
+    CANT_SENSORES = 8
 )(
     input i_clk,
     input i_rst,
@@ -49,17 +52,31 @@ module FSM_I2C_FIFO_UART #(
     input i_rx,
     output o_tx,
 
-    output reg o_led_status,    //Para verificar que la FPGA siga funcionando
-/*    output o_led_uart_err,
-    output o_led_fsm_error,
-    output o_led_fifo_err,
-    output o_led_borar,
-*/
-
     output [7:0] o_leds,
 
-    inout sda,            //Para simulacion hay assign comentados mas abajo)
-    inout scl
+    inout sda0,            //Para simulacion hay assign comentados en el archivo FSM_I2C_FIFO
+    inout scl0,
+
+    inout sda1,            
+    inout scl1,
+
+    inout sda2,            
+    inout scl2,
+
+    inout sda3,            
+    inout scl3,
+
+    inout sda4,            
+    inout scl4,
+
+    inout sda5,            
+    inout scl5,
+
+    inout sda6,            
+    inout scl6,
+
+    inout sda7,            
+    inout scl7
 );
 
 //--------------------------------------------------------------------------------------------
@@ -82,21 +99,62 @@ module FSM_I2C_FIFO_UART #(
             
 */
 
-wire [7:0] w_leds;
-
-assign o_leds = w_leds;
-
 //-------------------
 //wires and registers
 //-------------------
 
+wire [CANT_SENSORES-1:0] w_request_data;
+wire [CANT_SENSORES-1:0] w_data_ready;
+
 wire aux;
 
-wire w_fsm_rst;
+wire w_fsm0_rst;
+wire w_fifo0_empty;
+wire w_fifo0_data_out_extracted;
+wire w_fifo0_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo0_data_out;
 
-wire w_fifo_data_out_extracted;
-wire w_fifo_data_out_valid_to_extract;
-wire [DATA_DEPTH-1:0] w_fifo_data_out;
+wire w_fsm1_rst;
+wire w_fifo1_empty;
+wire w_fifo1_data_out_extracted;
+wire w_fifo1_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo1_data_out;
+
+wire w_fsm2_rst;
+wire w_fifo2_empty;
+wire w_fifo2_data_out_extracted;
+wire w_fifo2_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo2_data_out;
+
+wire w_fsm3_rst;
+wire w_fifo3_empty;
+wire w_fifo3_data_out_extracted;
+wire w_fifo3_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo3_data_out;
+
+wire w_fsm4_rst;
+wire w_fifo4_empty;
+wire w_fifo4_data_out_extracted;
+wire w_fifo4_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo4_data_out;
+
+wire w_fsm5_rst;
+wire w_fifo5_empty;
+wire w_fifo5_data_out_extracted;
+wire w_fifo5_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo5_data_out;
+
+wire w_fsm6_rst;
+wire w_fifo6_empty;
+wire w_fifo6_data_out_extracted;
+wire w_fifo6_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo6_data_out;
+
+wire w_fsm7_rst;
+wire w_fifo7_empty;
+wire w_fifo7_data_out_extracted;
+wire w_fifo7_data_out_valid_to_extract;
+wire [DATA_DEPTH-1:0] w_fifo7_data_out;
 
 //Input Output interface
 wire w_sda_oe;
@@ -142,8 +200,6 @@ wire w_uart_send_data_ready;
 
 wire [DATA_DEPTH-1:0] w_uart_recived_data;
 
-wire w_fifo_empty;
-
 //--------------------------------------------------------------------------------------------
 //UART
 //--------------------------------------------------------------------------------------------
@@ -176,8 +232,43 @@ wire w_rxerr;
 //UART and FIFO LOGIC
 //--------------------------------------------------------------------------------------------
 
-reg [31:0] r_counter = 26000050;
-reg r_led_status;
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT),
+    .DATA_HAD_ERROR(DATA_HAD_ERROR)
+) FSM_I2C_FIFO_0 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm0_rst),
+
+    .i_request_data(w_request_data[0]),
+    .o_data_ready(w_data_ready[0]), 
+
+    .sda(sda0),
+    .scl(scl0),
+
+    .o_led_fsm_err(o_leds[0]),
+
+    .i_fifo_data_out_extracted(w_fifo0_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo0_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo0_data_out),
+
+    .o_fifo_empty(w_fifo0_empty)
+
+);
 
 FSM_I2C_FIFO #(
     .DATA_DEPTH(DATA_DEPTH),  
@@ -195,26 +286,248 @@ FSM_I2C_FIFO #(
     .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
     .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
     .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
-) FSM_I2C_FIFO (
+) FSM_I2C_FIFO_1 (
     .i_clk(i_clk),
     .i_rst(i_rst),
-    .i_fsm_rst(w_fsm_rst),
+    .i_fsm_rst(w_fsm1_rst),
 
-    .sda(sda),
-    .scl(scl),
+    .i_request_data(w_request_data[1]),
+    .o_data_ready(w_data_ready[1]), 
 
-    .o_led_fsm_err(o_led_fsm_error),
+    .sda(sda1),
+    .scl(scl1),
 
-    .i_fifo_data_out_extracted(w_fifo_data_out_extracted),
-    .o_fifo_data_out_valid_to_extract(w_fifo_data_out_valid_to_extract),
-    .o_fifo_data_out(w_fifo_data_out),
+    .o_led_fsm_err(o_leds[1]),
 
-    .o_fifo_empty(w_fifo_empty),
+    .i_fifo_data_out_extracted(w_fifo1_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo1_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo1_data_out),
 
-    .o_borrar(o_led_borar)
+    .o_fifo_empty(w_fifo1_empty)
 
 );
 
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_2 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm2_rst),
+
+    .i_request_data(w_request_data[2]),
+    .o_data_ready(w_data_ready[2]), 
+
+    .sda(sda2),
+    .scl(scl2),
+
+    .o_led_fsm_err(o_leds[2]),
+
+    .i_fifo_data_out_extracted(w_fifo2_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo2_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo2_data_out),
+
+    .o_fifo_empty(w_fifo2_empty)
+
+);
+
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_3 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm3_rst),
+
+    .i_request_data(w_request_data[3]),
+    .o_data_ready(w_data_ready[3]), 
+
+    .sda(sda3),
+    .scl(scl3),
+
+    .o_led_fsm_err(o_leds[3]),
+
+    .i_fifo_data_out_extracted(w_fifo3_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo3_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo3_data_out),
+
+    .o_fifo_empty(w_fifo3_empty)
+
+);
+
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_4 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm4_rst),
+
+    .i_request_data(w_request_data[4]),
+    .o_data_ready(w_data_ready[4]), 
+
+    .sda(sda4),
+    .scl(scl4),
+
+    .o_led_fsm_err(o_leds[4]),
+
+    .i_fifo_data_out_extracted(w_fifo4_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo4_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo4_data_out),
+
+    .o_fifo_empty(w_fifo4_empty)
+
+);
+
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_5 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm5_rst),
+
+    .i_request_data(w_request_data[5]),
+    .o_data_ready(w_data_ready[5]), 
+
+    .sda(sda5),
+    .scl(scl5),
+
+    .o_led_fsm_err(o_leds[5]),
+
+    .i_fifo_data_out_extracted(w_fifo5_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo5_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo5_data_out),
+
+    .o_fifo_empty(w_fifo5_empty)
+
+);
+
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_6 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm6_rst),
+
+    .i_request_data(w_request_data[6]),
+    .o_data_ready(w_data_ready[6]), 
+
+    .sda(sda6),
+    .scl(scl6),
+
+    .o_led_fsm_err(o_leds[6]),
+
+    .i_fifo_data_out_extracted(w_fifo6_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo6_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo6_data_out),
+
+    .o_fifo_empty(w_fifo6_empty)
+
+);
+
+FSM_I2C_FIFO #(
+    .DATA_DEPTH(DATA_DEPTH),  
+    .NBYTES(NBYTES),                        //El i2c_master empieza a contar desde el cero (0=leer una vez)
+    .ADDR_SLAVE_READ(ADDR_SLAVE_READ),
+    .ADDR_SLAVE_WRITE(ADDR_SLAVE_WRITE),
+    .CONFIG_REGISTER_WRITE(CONFIG_REGISTER_WRITE),         //A modo de prueba se cambio el valor para que sea el mismo y se pueda comprobar
+    .CONFIG_REGISTER_READ(CONFIG_REGISTER_READ),          //el valor real del sensor de temperatura es 0x09 para escribir y 0x03 para leer
+    .CONFIG_REGISTER_DATA(CONFIG_REGISTER_DATA),
+    .SENSOR_DATA(SENSOR_DATA),
+    .SENSOR_DECIMAL_FRACTION_DATA(SENSOR_DECIMAL_FRACTION_DATA),
+    .ADDR_LENGTH(ADDR_LENGTH),
+    //i2c master
+    .CLK_DIV(CLK_DIV),
+    .CLK_DIV_REG_BITS(CLK_DIV_REG_BITS),
+    .COUNTER_ACK_LIMIT(COUNTER_ACK_LIMIT),
+    .COUNTER_CONFIG_LIMIT(COUNTER_CONFIG_LIMIT)
+) FSM_I2C_FIFO_7 (
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_fsm_rst(w_fsm7_rst),
+
+    .i_request_data(w_request_data[7]),
+    .o_data_ready(w_data_ready[7]), 
+
+    .sda(sda7),
+    .scl(scl7),
+
+    .o_led_fsm_err(o_leds[7]),
+
+    .i_fifo_data_out_extracted(w_fifo7_data_out_extracted),
+    .o_fifo_data_out_valid_to_extract(w_fifo7_data_out_valid_to_extract),
+    .o_fifo_data_out(w_fifo7_data_out),
+
+    .o_fifo_empty(w_fifo7_empty)
+
+);
 
 //--------------------------------------------------------------------------------------------
 //UART_FSM
@@ -252,11 +565,16 @@ UART_FSM #(.DATA_DEPTH(DATA_DEPTH),
     .FSM_SENSOR4(FSM_SENSOR4),
     .FSM_SENSOR5(FSM_SENSOR5),
     .FSM_SENSOR6(FSM_SENSOR6),
-    .FSM_SENSOR7(FSM_SENSOR7)
+    .FSM_SENSOR7(FSM_SENSOR7),
+    .FIFO_EMPTY_ERROR_CODE(FIFO_EMPTY_ERROR_CODE),
+    .CANT_SENSORES(CANT_SENSORES)
 )
 UART_FSM (
     .i_clk(i_clk),
     .i_rst(i_rst),
+
+    .o_request_data(w_request_data),
+    .i_data_ready(w_data_ready),
 
     .i_uart_recived_data(w_uart_fsm_recived_data),
     .i_uart_recived_valid(w_uart_recived_valid),
@@ -266,13 +584,53 @@ UART_FSM (
     .o_uart_send_valid(w_uart_send_valid),
     .i_uart_send_data_ready(w_uart_send_data_ready),
 
-    .o_fifo0_data_out_extracted(w_fifo_data_out_extracted),
-    .i_fifo0_data_out_valid_to_extract(w_fifo_data_out_valid_to_extract),
-    .i_fifo0_data_out(w_fifo_data_out),
-    .o_fsm_rst(w_fsm_rst),
-    .i_fifo_empty(w_fifo_empty),
-    
-    .o_leds(w_leds)
+    .o_fifo0_data_out_extracted(w_fifo0_data_out_extracted),
+    .i_fifo0_data_out_valid_to_extract(w_fifo0_data_out_valid_to_extract),
+    .i_fifo0_data_out(w_fifo0_data_out),
+    .o_fsm0_rst(w_fsm0_rst),
+    .i_fifo0_empty(w_fifo0_empty),
+
+    .o_fifo1_data_out_extracted(w_fifo1_data_out_extracted),
+    .i_fifo1_data_out_valid_to_extract(w_fifo1_data_out_valid_to_extract),
+    .i_fifo1_data_out(w_fifo1_data_out),
+    .o_fsm1_rst(w_fsm1_rst),
+    .i_fifo1_empty(w_fifo1_empty),
+
+    .o_fifo2_data_out_extracted(w_fifo2_data_out_extracted),
+    .i_fifo2_data_out_valid_to_extract(w_fifo2_data_out_valid_to_extract),
+    .i_fifo2_data_out(w_fifo2_data_out),
+    .o_fsm2_rst(w_fsm2_rst),
+    .i_fifo2_empty(w_fifo2_empty),
+
+    .o_fifo3_data_out_extracted(w_fifo3_data_out_extracted),
+    .i_fifo3_data_out_valid_to_extract(w_fifo3_data_out_valid_to_extract),
+    .i_fifo3_data_out(w_fifo3_data_out),
+    .o_fsm3_rst(w_fsm3_rst),
+    .i_fifo3_empty(w_fifo3_empty),
+
+    .o_fifo4_data_out_extracted(w_fifo4_data_out_extracted),
+    .i_fifo4_data_out_valid_to_extract(w_fifo4_data_out_valid_to_extract),
+    .i_fifo4_data_out(w_fifo4_data_out),
+    .o_fsm4_rst(w_fsm4_rst),
+    .i_fifo4_empty(w_fifo4_empty),
+
+    .o_fifo5_data_out_extracted(w_fifo5_data_out_extracted),
+    .i_fifo5_data_out_valid_to_extract(w_fifo5_data_out_valid_to_extract),
+    .i_fifo5_data_out(w_fifo5_data_out),
+    .o_fsm5_rst(w_fsm5_rst),
+    .i_fifo5_empty(w_fifo5_empty),
+
+    .o_fifo6_data_out_extracted(w_fifo6_data_out_extracted),
+    .i_fifo6_data_out_valid_to_extract(w_fifo6_data_out_valid_to_extract),
+    .i_fifo6_data_out(w_fifo6_data_out),
+    .o_fsm6_rst(w_fsm6_rst),
+    .i_fifo6_empty(w_fifo6_empty),
+
+    .o_fifo7_data_out_extracted(w_fifo7_data_out_extracted),
+    .i_fifo7_data_out_valid_to_extract(w_fifo7_data_out_valid_to_extract),
+    .i_fifo7_data_out(w_fifo7_data_out),
+    .o_fsm7_rst(w_fsm7_rst),
+    .i_fifo7_empty(w_fifo7_empty)
 );
 
 //--------------------------------------------------------------------------------------------
@@ -312,144 +670,11 @@ uart #(.DIV_BITS(DIV_BITS)) uart(
     .i_valid(w_uart_send_valid),             //Datos a enviar tomados o no tomados
     .o_ready(w_uart_send_data_ready),        //Informacion enviada o lista para enviar
 
-    .o_rxerr(o_led_uart_err)
+    .o_rxerr()
 
 );
 
-assign w_uart_fsm_recived_data[0] = w_uart_recived_data[0];
-assign w_uart_fsm_recived_data[1] = w_uart_recived_data[1];
-assign w_uart_fsm_recived_data[2] = w_uart_recived_data[2];
-assign w_uart_fsm_recived_data[3] = w_uart_recived_data[3];
-assign w_uart_fsm_recived_data[4] = w_uart_recived_data[4];
-assign w_uart_fsm_recived_data[5] = w_uart_recived_data[5];
-assign w_uart_fsm_recived_data[6] = w_uart_recived_data[6];
-assign w_uart_fsm_recived_data[7] = w_uart_recived_data[7];
-/*
-//--------------------------------------------------------------------------------------------
-//SB_IO Instantiation
-//--------------------------------------------------------------------------------------------
-
-wire w_clock_enable;
-wire w_d_out_0;
-wire w_d_in_0;
-wire w_d_out_1;
-wire w_d_in_1;
-reg r_latch_input_value = 1'b0;
-
-wire w_package_pin_scl;
-wire w_package_pin_sda;
-
-
-assign w_package_pin_scl = scl;
-assign w_package_pin_sda = sda;
-
-//-------
-//SDA pin
-//-------
-
-SB_IO
-IO_PIN_SDA_INST
-(
-.PACKAGE_PIN (w_package_pin_sda),                 // User’s Pin signal name
-.LATCH_INPUT_VALUE (r_latch_input_value),     // Latches/holds the Input value
-.CLOCK_ENABLE (w_clock_enable),             // Clock Enable common to input and output clock
-.INPUT_CLK (i_clk),                         // Clock for the input registers
-.OUTPUT_CLK (i_clk),                        // Clock for the output registers
-.OUTPUT_ENABLE (w_sda_oe),                  // Output Pin Tristate/Enable control
-.D_OUT_0 (w_sda_o),                         // Data 0 – out to Pin/Rising clk edge
-.D_OUT_1 (w_d_out_0),                         // Data 1 - out to Pin/Falling clk edge
-.D_IN_0 (w_sda_i),                           // Data 0 - Pin input/Rising clk edge
-.D_IN_1 (w_d_in_0)                            // Data 1 – Pin input/Falling clk edge
-); // synthesis DRIVE_STRENGTH= x2
-
-defparam IO_PIN_SDA_INST.PIN_TYPE = 6'b101001;
-// See Input and Output Pin Function Tables.
-// Default value of PIN_TYPE = 6’000000 i.e.
-// an input pad, with the input signal
-// registered.
-defparam IO_PIN_SDA_INST.PULLUP = 1'b0;
-// By default, the IO will have NO pull up.
-// This parameter is used only on bank 0, 1,
-// and 2. Ignored when it is placed at bank 3
-defparam IO_PIN_SDA_INST.NEG_TRIGGER = 1'b0;
-// Specify the polarity of all FFs in the IO to
-// be falling edge when NEG_TRIGGER = 1.
-// Default is rising edge.
-defparam IO_PIN_SDA_INST.IO_STANDARD = "SB_LVCMOS";
-// Other IO standards are supported in bank 3
-// only: SB_SSTL2_CLASS_2, SB_SSTL2_CLASS_1,
-// SB_SSTL18_FULL, SB_SSTL18_HALF, SB_MDDR10,
-// SB_MDDR8, SB_MDDR4, SB_MDDR2 etc.
-
-//-------
-//SCL pin
-//-------
-
-SB_IO
-IO_PIN_SCL_INST
-(
-.PACKAGE_PIN (w_package_pin_scl),                 // User’s Pin signal name
-.LATCH_INPUT_VALUE (r_latch_input_value),     // Latches/holds the Input value
-.CLOCK_ENABLE (w_clock_enable),             // Clock Enable common to input and output clock
-.INPUT_CLK (i_clk),                         // Clock for the input registers
-.OUTPUT_CLK (i_clk),                        // Clock for the output registers
-.OUTPUT_ENABLE (w_scl_oe),                  // Output Pin Tristate/Enable control
-.D_OUT_0 (w_scl_o),                         // Data 0 – out to Pin/Rising clk edge
-.D_OUT_1 (w_d_out_1),                         // Data 1 - out to Pin/Falling clk edge
-.D_IN_0 (w_scl_i),                           // Data 0 - Pin input/Rising clk edge
-.D_IN_1 (w_d_in_1)                            // Data 1 – Pin input/Falling clk edge
-); //synthesis DRIVE_STRENGTH= x2
-defparam IO_PIN_SCL_INST.PIN_TYPE = 6'b101001;
-// See Input and Output Pin Function Tables.
-// Default value of PIN_TYPE = 6’000000 i.e.
-// an input pad, with the input signal
-// registered.
-defparam IO_PIN_SCL_INST.PULLUP = 1'b0;
-// By default, the IO will have NO pull up.
-// This parameter is used only on bank 0, 1,
-// and 2. Ignored when it is placed at bank 3
-defparam IO_PIN_SCL_INST.NEG_TRIGGER = 1'b0;
-// Specify the polarity of all FFs in the IO to
-// be falling edge when NEG_TRIGGER = 1.
-// Default is rising edge.
-defparam IO_PIN_SCL_INST.IO_STANDARD = "SB_LVCMOS";
-// Other IO standards are supported in bank 3
-// only: SB_SSTL2_CLASS_2, SB_SSTL2_CLASS_1,
-// SB_SSTL18_FULL, SB_SSTL18_HALF, SB_MDDR10,
-// SB_MDDR8, SB_MDDR4, SB_MDDR2 etc.
-
-//--------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------
-
-
-*/
-
-assign o_led_fifo_err = w_fifo_empty;
-
-
-//--------------------------------------------------------------------------------------------
-//UART and FIFO LOGIC
-//--------------------------------------------------------------------------------------------
-
-always @(posedge i_clk or posedge i_rst) begin
-    if(i_rst) begin
-        r_led_status = 1'b0;
-    end
-    else begin
-
-        if(r_counter <= 50) begin
-            r_led_status <= ~r_led_status;
-            r_counter <= 26000050;
-        end
-        else begin
-            r_counter <= r_counter - 1;
-        end
-
-    end
-
-    o_led_status <= r_led_status;
-
-end
+assign w_uart_fsm_recived_data = w_uart_recived_data;
 
 endmodule
 
